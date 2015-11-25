@@ -1,0 +1,9 @@
+todo
+attributes 
+month, day, [check]
+binarize traj
+criss-cross combining attributes +, *, /, - [pending]
+discretize rain or all - with implemented methods or 0 mid high
+estimate NA some with averages, some with smart estimation
+
+rows with too much NA cut out [check]
