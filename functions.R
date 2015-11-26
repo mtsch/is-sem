@@ -66,4 +66,24 @@ excludeByColumn <- function(data, columns){
     data[, -which(names(data) %in% columns)]
 }
 
+sampleClassesEqualDist <- function(data, class_name, ratio=0.10){
+    if (ratio > 1){
+        ratio <- ratio / 100
+    }
+    n <- nrow(data)
+    n_test <- round(n*ratio)
+    shares <- table(data[class_name])
+    shares_sum <- sum(shares)
+    test_shares <- round(n_test*(shares)/shares_sum+1) # +1 to make extreme have two samples
+    train <- c()
+    test <- c()
+    for (i in names(shares)){
+        sub_data <- data[data[class_name] == i,]
+        sample <- sample(1:nrow(sub_data), test_shares[i])
+        test <- rbind(test, sub_data[sample,])
+        train <- rbind(train, sub_data[-sample,])
+    }
+    list(train=train, test=test)
+    
+}
 
