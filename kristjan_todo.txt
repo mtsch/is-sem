@@ -7,3 +7,6 @@ discretize rain or all - with implemented methods or 0 mid high
 estimate NA some with averages, some with smart estimation
 
 rows with too much NA cut out [check]
+
+relation of tlong and tshort
+classification of PLARGE
