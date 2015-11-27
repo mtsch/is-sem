@@ -1,4 +1,3 @@
-# alleses <- read.csv("pollution.csv",header=TRUE,",")
 alles  <- splitDate %.% read.csv("pollution.csv")
 
 # put ozone into classes
@@ -6,7 +5,7 @@ alles$OZONE_CLASS <- cut(alles$O3, breaks=c(0,60.0,120.0,180.0,666),labels = c("
 alles$PLARGE_CLASS <- cut(alles$PLARGE, breaks=c(0,35.0,50.0,666),labels = c("LOW","MODERATE","HIGH"))
 alles$TLONG <- as.factor(alles$TLONG)
 alles$TSHORT <- as.factor(alles$TSHORT)
-clean <- alles[complete.cases(alles),]
+
 
 target_variables <- c("OZONE_CLASS","O3","PLARGE","PLARGE_CLASS","PSMALL")
 target_ozone <- c("PLARGE","PLARGE_CLASS","PSMALL")
@@ -22,7 +21,7 @@ clean$RAIN[clean$RAIN > 100] <- 100
 clean$WET_DAY <- clean$RAIN > 0
 
 
-
+clean <- alles[complete.cases(alles),]
 rowsWithNA<- alles[!complete.cases(alles),]
 
 alles[1:10,]
