@@ -5,6 +5,11 @@ library(adabag) # boosting and bagging    https://cran.r-project.org/web/package
 library(e1071) # SVM    https://cran.r-project.org/web/packages/e1071/e1071.pdf
 library(tictoc)
 library(monmlp) # multilayer perceptron    https://cran.r-project.org/web/packages/monmlp/monmlp.pdf
+#library(weka) # may be useful, not sure
+library(caret) 
+# library(xlxs) # may be needed for rJava - or maybe not
+library(rJava) # for FSelector
+library(FSelector) # feature selection 
 
 source("helpers.R")
 source("exploration.R")
