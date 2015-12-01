@@ -1,15 +1,21 @@
 clean2 <- clean # backup
+
+clean2 <- clean2[,cbind(cfs_attr,"OZONE_CLASS")]
+
 clean2 <- excludeByColumn(clean2,c("YEAR","DAY","TLONG","RAIN"))
 clean2 <- excludeByColumn(clean2,c("YDAY"))
 test_sample <- sample(nrow(clean2),500)
 test = clean2[test_sample,]
 train = clean2[-test_sample,]
-majority_classifier <- nrow(all[all$OZONE_CLASS == names(which.max(table(all$OZONE_CLASS))),]) / nrow(all)
+majority_classifier <- nrow(alles[alles$OZONE_CLASS == names(which.max(table(alles$OZONE_CLASS))),]) / nrow(alles)
 
 tmp <- sampleClassesEqualDist(clean2,"OZONE_CLASS")
 train <- tmp$train
 test <- tmp$test
 
+train <- excludeByColumn(train,c("OZONE_CLASS.1","OZONE_CLASS.2","OZONE_CLASS.3"))
+test <- excludeByColumn(test,c("OZONE_CLASS.1","OZONE_CLASS.2","OZONE_CLASS.3"))
+test <- excludeByColumn(test,c("OZONE_CLASS"))
 
 tic
 models <- c("tree","rf","bayes","knn")
@@ -83,10 +89,10 @@ train_matrix <- data.matrix(train)
 test_ozone <- data.matrix(unclass(as.factor(test[,"OZONE_CLASS"])))
 test_matrix <- data.matrix(test)
 
-train_matrix <- train_matrix[,-6] # need function to remove column from name
-test_matrix <- test_matrix[,-6]
+train_matrix <- train_matrix[,-5] # need function to remove matrix column from name
+test_matrix <- test_matrix[,-5]
 
-mp_weights <- monmlp.fit(x = train_matrix,y =  train_ozone, hidden1 = 6, hidden2 = 6)
+mp_weights <- monmlp.fit(x = train_matrix,y =  train_ozone, hidden1 = 4)
 pred <- monmlp.predict(x = as.matrix(test_matrix), weights = mp_weights)
 pred2 <- factor(round(pred),levels = c(1,2,3,4), labels = c("LOW","MODERATE","HIGH","EXTREME"))
 accuracy <- modelEval(model=NULL,test$OZONE_CLASS,pred2)
@@ -111,4 +117,5 @@ accuracy[1:8]
 
 
 
+cfs_attr <- cfs(OZONE_CLASS ~ ., clean2)
 
