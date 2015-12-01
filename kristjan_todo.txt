@@ -10,3 +10,9 @@ rows with too much NA cut out [check]
 
 relation of tlong and tshort
 classification of PLARGE
+use j-value for tlong and tshort among others
+reconstruct NA, firs with mean/max, then maybe something smarter
+function select_by_column
+check this ozone_class 1 2 3 4 shit
+summ%^%df -> summary(df)
+remove column using name in matrix
