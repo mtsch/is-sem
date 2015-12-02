@@ -7,7 +7,7 @@ library(CORElearn)
 library(nnet)
 
 prepData <- function( all.df, output.col, exclude.col
-                    , test.percent=0.1, impute=imputeMean)
+                    , test.percent=0.1, impute=imputeMean, log.out=F)
 {
 
   # rm na in output
@@ -25,6 +25,10 @@ prepData <- function( all.df, output.col, exclude.col
   resp.i    <- which(cnames == output.col)
   imputed.x <- impute(df[, -resp.i])
   df        <- named(cbind(imputed.x, df[, resp.i]), col=cnames)
+
+  if (log.out)
+    df[, output.col] <- log(df[, output.col] + 1)
+    
 
   # split data into test and learn data
   n    <- nrow(df)
@@ -180,6 +184,8 @@ O3.data.me <- prepData( all.df
                       , "O3", c("PLARGE", "PSMALL", "DATE"))
 PS.data.me <- prepData( all.df
                       , "PSMALL", c("PLARGE", "O3", "DATE"))
+PS.data.me.log <- prepData( all.df
+                          , "PSMALL", c("PLARGE", "O3", "DATE"), log.out=T)
 
 if (F){
 O3.data.rf <- prepData( all.df
@@ -189,10 +195,6 @@ PS.data.rf <- prepData( all.df
 O3.data.scaled <- lapply(O3.data.me, as.data.frame %.% scale)
 PS.data.scaled <- lapply(PS.data.me, as.data.frame %.% scale)
 
-}
-
-
-
 resultO3 <- c()
 resultPS <- c()
 
@@ -201,4 +203,5 @@ for (i in 1:30*2) {
   ann <- performANN(O3.data.scaled, PS.data.scaled, size=i)
   resultO3[i/2] <- ann$O3cor
   resultPS[i/2] <- ann$PScor
+}
 }

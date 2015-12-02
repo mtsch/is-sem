@@ -79,7 +79,7 @@ binarizeVector <- function(v, name)
 {
   v <- as.factor(v)
   named( t %.% aaply(1:nlevels(v), 1, function(i, x) as.numeric(i == x), v)
-       , col = name %+% " = " %+% levels(v) )
+       , col = name %+% ".is." %+% levels(v) )
 }
 
 # binarizira traj in short traj
