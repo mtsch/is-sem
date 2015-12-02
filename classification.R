@@ -36,7 +36,7 @@ toc
 # load("accuracies_clean_data.Rda") #load accuracies from upper loops
 
 
-boost_model <- boosting(OZONE_CLASS ~ .,train, mfinal = 100)
+boost_model <- boosting(OZONE_CLASS ~ .,train, mfinal = 20)
 pred <- predict.boosting(boost_model, test)
 accuracy <- sum(pred$class == test$OZONE_CLASS) / nrow(test)
 accuracy
@@ -46,7 +46,7 @@ accuracy
 # 0.84 clean removed DAY YEAR RAIN TLONG
 # 0.8246445 uniform dist removed DAY YEAR RAIN TLONG
 
-bagg_model <- bagging(OZONE_CLASS ~ ., train, mfinal = 100)
+bagg_model <- bagging(OZONE_CLASS ~ ., train, mfinal = 20)
 pred <- predict.bagging(bagg_model,test)
 accuracy <- sum(pred$class == test$OZONE_CLASS) / nrow(test)
 accuracy
@@ -92,7 +92,7 @@ test_matrix <- data.matrix(test)
 train_matrix <- train_matrix[,-5] # need function to remove matrix column from name
 test_matrix <- test_matrix[,-5]
 
-mp_weights <- monmlp.fit(x = train_matrix,y =  train_ozone, hidden1 = 4)
+mp_weights <- monmlp.fit(x = train_matrix,y =  train_ozone, hidden1 = 4, hidden2=4)
 pred <- monmlp.predict(x = as.matrix(test_matrix), weights = mp_weights)
 pred2 <- factor(round(pred),levels = c(1,2,3,4), labels = c("LOW","MODERATE","HIGH","EXTREME"))
 accuracy <- modelEval(model=NULL,test$OZONE_CLASS,pred2)

@@ -87,3 +87,19 @@ sampleClassesEqualDist <- function(data, class_name, ratio=0.10){
     
 }
 
+
+attrQualityVoting <- function(target, data, estimators){
+    attribute_quality <- attrEvalMultipleEst(target,data,estimators)
+    names_without_target <- names(data)[names(data) != target]
+    ranking <- numeric(length(names_without_target))
+    names(ranking) <- names_without_target
+    for (i in estimators){
+        esti <- get(i,attribute_quality)
+        for (j in names(data)){
+            v <- match(j,names(esti))
+            ranking[j] = ranking[j] + v
+        }
+    }
+    ranking <- sort(ranking)
+    ranking
+}
