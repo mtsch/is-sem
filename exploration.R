@@ -103,10 +103,19 @@ PLARGE.df <- preparePLARGEClassData(all.df)
 
 replace.na <- function(v)
 {
-  if (is.numeric(v))
-    v[is.na(v)] <- mean(v, na.rm=T)
-  else
-    v[is.na(v)] <- which.max(table(v))
-  v
+#     if(!any(is.na(v))){ # there was an error with OZONE_CLASS 
+#         
+#     }
+    if (is.numeric(v))
+        v[is.na(v)] <- mean(v, na.rm=T)
+    else
+        v[is.na(v)] <- names(which.max(table(v)))
+    v
 }
 
+replace.na.in.df <- function(data) {
+    for (i in names(data)){
+        data[,i] <- replace.na(data[,i])
+    }
+    data
+}

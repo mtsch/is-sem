@@ -16,3 +16,11 @@ function select_by_column
 check this ozone_class 1 2 3 4 shit
 summ%^%df -> summary(df)
 remove column using name in matrix
+
+
+
+tell Matija about reverse engineering report
+we see what we use in the end
+we know what we had at the beginning 
+reverse engineer how to got to there
+prepare report
