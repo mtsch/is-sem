@@ -10,6 +10,8 @@ library(caret)
 # library(xlxs) # may be needed for rJava - or maybe not
 library(rJava) # for FSelector
 library(FSelector) # feature selection 
+library(discretization) # https://cran.r-project.org/web/packages/discretization/discretization.pdf
+
 
 source("helpers.R")
 source("exploration.R")
