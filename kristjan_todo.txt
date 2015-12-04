@@ -17,6 +17,9 @@ check this ozone_class 1 2 3 4 shit
 summ%^%df -> summary(df)
 remove column using name in matrix
 
+solar angle
+producing more rare data
+
 
 
 tell Matija about reverse engineering report

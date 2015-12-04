@@ -6,14 +6,37 @@ alles$PLARGE_CLASS <- cut(alles$PLARGE, breaks=c(0,35.0,50.0,666),labels = c("LO
 alles$TLONG <- as.factor(alles$TLONG)
 alles$TSHORT <- as.factor(alles$TSHORT)
 alles$RAIN[alles$RAIN > 100] <- 100
-alles$WET_DAY <- as.factor(alles$RAIN > 0)
+#alles$WET_DAY <- as.factor(alles$RAIN > 0)
 
 alles <- excludeByColumn(alles, c("DATE","O3","PLARGE","PSMALL"))
 
-indexes_of_clean_ozone <- complete.cases(alles$OZONE_CLASS)
-ozone_with_na <- excludeByColumn(alles[indexes_of_clean_ozone,], "PLARGE_CLASS") # semi clean data, removes plarge
-ozone_clean <- replace.na.in.df(ozone_with_na)
-summary(ozone_clean)
+target <- "PLARGE_CLASS"
+anti_target <- "OZONE_CLASS"
+target <- "OZONE_CLASS"
+anti_target <- "PLARGE_CLASS"
+summary(alles)
+indexes_of_clean_data <- complete.cases(alles[,target])
+data_with_na <- excludeByColumn(alles[indexes_of_clean_data,], anti_target) # removes unneeded class
+clean <- replace.na.in.df(data_with_na)
+summary(clean)
+
+
+clean$RAIN2 <- log(1+clean$RAIN,2)
+clean$WIND2 <- log(1+clean$WIND,2)
+# clean$TEMP2 <- log(1+clean$HUM,2)
+# clean$HUM2 <- log(1+clean$HUM,2)
+clean$RAIN <- NULL
+clean$WIND <- NULL
+
+clean_backup <- clean
+
+
+
+
+
+
+
+
 
 
 for (i in names(rows_with_na_except_class)){
@@ -25,8 +48,6 @@ for (i in names(rows_with_na_except_class)){
 }
 
 
-tmp <- alles[1:200,]
-# plot(1:nrow(tmp),tmp$WIND,"l")
-plot(1:(length(tmp$TSHORT)-1),abs(diff(forceNumeric(tmp$TLONG))),"l") # plots "derivative" of wind
-
-
+# solar angle
+clean2$SOLAR_ANGLE <- 23.45*(pi/180)*sin(2*pi*((284+clean$YDAY)/36.25)) 
+clean2$SOLAR_ANGLE2 <- 34+sin(pi*8*clean$YDAY/80) # dummy
