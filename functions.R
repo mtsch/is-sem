@@ -52,7 +52,7 @@ performClassification <- function(class_name, train_data, test_data, model_name,
         ml_model <- CoreModel(class_name, train_data, model=model_name, selectionEstimator=estimator_name)
     }
     prediction <- predict(ml_model, test_data, type="class")
-    f_accuracies <- modelEval(ml_model, test[,class_name], prediction)
+    f_accuracies <- modelEval(ml_model, test_data[,class_name], prediction)
     f_accuracies
     # list(accuracies=f_accuracies, model=ml_model)
 }
@@ -66,7 +66,14 @@ excludeByColumn <- function(data, columns){
     data[, -which(names(data) %in% columns)]
 }
 
-sampleClassesEqualDist <- function(data, class_name, ratio=0.10){
+includeByColumn <- function(data, columns){
+    data[, which(names(data) %in% columns)]
+}
+
+sampleClassesEqualDist <- function(data, class_name, ratio=0.10, seed=0){
+    if (!seed==0){
+        set.seed(seed)
+    }
     if (ratio > 1){
         ratio <- ratio / 100
     }
@@ -103,3 +110,21 @@ attrQualityVoting <- function(target, data, estimators){
     ranking <- sort(ranking)
     ranking
 }
+
+increaseLowFreqData <- function(data, target, k=0.1){ # works like shit
+    ratios_raw <- table(data[,target]) / nrow(data)
+    ratios <- round(1/(ratios_raw^k) / min(1/(ratios_raw^k)))
+    ratios <- ratios - min(ratios)
+    ratios[ratios == Inf] <- 0
+    data_names <- names(table(data[,target]))
+    new_data <- data
+    for(i in 1:length(data_names)){
+        tmp <- data[data[,target] == data_names[i],]
+        tmp2 <- tmp[rep(1:nrow(tmp),ratios[i]),]
+        new_data <- rbind(new_data,tmp2)
+        
+    }
+    new_data
+}
+
+

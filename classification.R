@@ -1,21 +1,38 @@
-clean2 <- clean # backup
 
-clean2 <- clean2[,cbind(cfs_attr,"OZONE_CLASS")]
+clean <- clean_backup # backup
+
+# clean2 <- clean2[,cbind(cfs_attr,target)]
 
 clean2 <- excludeByColumn(clean2,c("YEAR","DAY","TLONG","RAIN"))
 clean2 <- excludeByColumn(clean2,c("YDAY"))
-test_sample <- sample(nrow(clean2),500)
-test = clean2[test_sample,]
-train = clean2[-test_sample,]
-majority_classifier <- nrow(alles[alles$OZONE_CLASS == names(which.max(table(alles$OZONE_CLASS))),]) / nrow(alles)
+majority_classifier <- max(table(data_with_na[,"OZONE_CLASS"]))/nrow(data_with_na)
+majority_classifier <- max(table(data_with_na[,"PLARGE_CLASS"]))/nrow(data_with_na)
+majority_classifier
 
-tmp <- sampleClassesEqualDist(clean2,"OZONE_CLASS")
+tmp <- sampleClassesEqualDist(clean,target)
 train <- tmp$train
 test <- tmp$test
 
-train <- excludeByColumn(train,c("OZONE_CLASS.1","OZONE_CLASS.2","OZONE_CLASS.3"))
-test <- excludeByColumn(test,c("OZONE_CLASS.1","OZONE_CLASS.2","OZONE_CLASS.3"))
-test <- excludeByColumn(test,c("OZONE_CLASS"))
+bagg_model <- bagging(OZONE_CLASS ~ ., train, mfinal = 20)
+pred <- predict.bagging(bagg_model,test)
+accuracy <- sum(pred$class == test$OZONE_CLASS) / nrow(test)
+accuracy
+
+train <- increaseLowFreqData(tmp$train, target, 1.5)
+test <- tmp$test
+
+bagg_model <- bagging(OZONE_CLASS ~ ., train, mfinal = 20)
+pred <- predict.bagging(bagg_model,test)
+accuracy <- sum(pred$class == test$OZONE_CLASS) / nrow(test)
+accuracy
+
+
+
+
+
+
+
+
 
 tic
 models <- c("tree","rf","bayes","knn")
@@ -24,11 +41,11 @@ accuracies <- data.frame()
 for (i in models){ #needs 5-10 minutes to run
     if (i %in% c("tree","rf")){
         for (j in ests){
-            accuracies[i,j] <- performClassification("OZONE_CLASS", train, test, i, j)[1] #selects only accuracy
+            accuracies[i,j] <- performClassification(target, train, test, i, j)[1] #selects only accuracy
         }
     }
     else {
-        accuracies[i,1] <- performClassification("OZONE_CLASS", train, test, i)[1]
+        accuracies[i,1] <- performClassification(target, train, test, i)[1]
     }
     
 }
@@ -36,9 +53,9 @@ toc
 # load("accuracies_clean_data.Rda") #load accuracies from upper loops
 
 
-boost_model <- boosting(OZONE_CLASS ~ .,train, mfinal = 20)
+boost_model <- boosting(target %+%" ~ .", train, mfinal = 100)
 pred <- predict.boosting(boost_model, test)
-accuracy <- sum(pred$class == test$OZONE_CLASS) / nrow(test)
+accuracy <- sum(pred$class == test[,target]) / nrow(test)
 accuracy
 # 0.842 clean data
 # 0.8364929 uniform dist clean data
