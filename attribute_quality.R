@@ -59,9 +59,9 @@ c <- cbind(a)
 
 b[with(b,order(-a))]
 
-aaa <- includeByColumn(tmp$train, paste(c("TEMP","YDAY","TSHORT","HUM", "YEAR","TLONG","WIND2", target)))
+aaa <- includeByColumn(tmp$train, c("TEMP","YDAY","TSHORT","HUM", "YEAR","TLONG","WIND2", target))
 summary(aaa)
-aaaa <- includeByColumn(tmp$test, paste(c("TEMP","YDAY","TSHORT","HUM", "YEAR","TLONG","WIND2", target)))
+aaaa <- includeByColumn(tmp$test, c("TEMP","YDAY","TSHORT","HUM", "YEAR","TLONG","WIND2", target))
 summary(aaaa)
 performClassification(PLARGE_CLASS ~ ., aaa, aaaa, "tree","ReliefFexpRank")[1]
 
