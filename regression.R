@@ -1,9 +1,10 @@
 # data prep
-library(e1071)
 library(pls)
+library(e1071)
 library(kknn)
 library(randomForest)
 library(CORElearn)
+library(nnet)
 
 prepData <- function( all.df, output.col, exclude.col
                     , test.percent=0.1, impute=imputeMean)
@@ -108,8 +109,8 @@ performPLS <- function(O3dfs, PSdfs, ...)
 
 performSVM <- function(O3dfs, PSdfs, ...)
 {
-  O3s <- best.svm(O3 ~ .,     data=O3dfs$learn, ...)
-  PSs <- best.svm(PSMALL ~ ., data=PSdfs$learn, ...)
+  O3s <- best.svm(O3 ~ .,     data=O3dfs$learn, nrepeat=10, ...)
+  PSs <- best.svm(PSMALL ~ ., data=PSdfs$learn, nrepeat=10, ...)
 
   summary(O3s)
   summary(PSs)
@@ -155,6 +156,26 @@ performRF <- function(O3dfs, PSdfs, ..., best=F) # best ni zares blazno boljši
        , PScor = getCor(PSr, PSdfs, "PSMALL"))
 }
 
+performANN <- function(O3dfs, PSdfs, best=F, size=15, ...)
+{
+  if (best) {
+    O3a <- best.nnet(O3 ~ ., data=O3dfs$learn, maxit=1000, ...)
+    print("ping!")
+    PSa <- best.nnet(PSMALL ~ ., data=PSdfs$learn, maxit=1000, ...)
+    print("pong!")
+  } else {
+    O3a <- nnet(O3 ~ ., data=O3dfs$learn, size=size, decay=1, maxit=1000, ...)
+    PSa <- nnet(PSMALL ~ ., data=PSdfs$learn, size=size, decay=1, maxit=1000, ...)
+  }
+
+  summary(O3a)
+  summary(PSa)
+  
+  list ( O3 = O3a, PS = PSa
+       , O3cor = getCor(O3a, O3dfs, "O3")
+       , PScor = getCor(PSa, PSdfs, "PSMALL"))
+}
+
 O3.data.me <- prepData( all.df
                       , "O3", c("PLARGE", "PSMALL", "DATE"))
 PS.data.me <- prepData( all.df
@@ -165,4 +186,19 @@ O3.data.rf <- prepData( all.df
                       , "O3", c("PLARGE", "PSMALL", "DATE"), impute=imputeFun)
 PS.data.rf <- prepData( all.df
                       , "PSMALL", c("PLARGE", "O3", "DATE"), impute=imputeFun)
+O3.data.scaled <- lapply(O3.data.me, as.data.frame %.% scale)
+PS.data.scaled <- lapply(PS.data.me, as.data.frame %.% scale)
+
+}
+
+
+
+resultO3 <- c()
+resultPS <- c()
+
+for (i in 1:30*2) {
+  print(i)
+  ann <- performANN(O3.data.scaled, PS.data.scaled, size=i)
+  resultO3[i/2] <- ann$O3cor
+  resultPS[i/2] <- ann$PScor
 }
