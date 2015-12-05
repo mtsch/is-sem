@@ -1,0 +1,78 @@
+# Uvod #
+
+Na začetku izdelave seminarske sva se sestala in začela s seanso
+brainstorminga.  
+Pregledala sva podatke, narisala nekaj grafov in debatirala o
+predprocesiranu, algoritmih in načinih evaluacije podatkov. Odločila sva se, da
+bova spremenila imena atributov v krajša in nama bolj logična imena.  
+```{r}
+all.data <- read.csv("pollution.csv")
+summary(all.data)
+```
+Opazila sva, da je v podatkih veliko manjkajočih vrednosti, sploh pri odvisnih
+atributih. Ker si s podatki kjer odvisni atributi manjkaja ne moreva pomagati,
+sva se odločila, da jih izločiva - za vsak odvisen atribut posebej.  
+V primerih, v katerih majkajo podatki samo v neodvisnih atributih sva se
+odločila, da jih za enkrat pustiva pri miru, saj jih je dovolj za učenje in da
+se bova z imputacijo ukvarjala kasneje.  
+
+Pri pregledu sva opazila še, da so podatki za padavine (`all.data$RAIN`) zelo
+zašumljeni, saj je njegova največja vrednost kar 31990mm! Na internetu sva
+preverila svetovne rekorde za količino padavin v enem dnevu in ugotovila, da
+je bila rekordna izmerjena količina dežja v 24 urah le 1825mm[^1]. Čeprav enote
+meritev niso podane sklepava, da gre za milimetre, saj je to najpogostejša
+enota, ki se uporablja za ta namen. Drugi argument za milimetre je tudi
+dejstvo, da je najmanjša neničelna vrednost v `all.data$RAIN` enaka 0.05, kar
+bi bilo v manjših enotah nemerljivo.
+```{r}
+c(min = min(all.data$RAIN[all.data$RAIN != 0]), max = max(all.data$RAIN))
+```
+Ker bi informacija o padavinah vseeno lahko bila zelo pomembna, sva se
+odločila, da bova problem rešila tako, da omejiva najvišjo vrednost na 100mm.
+```{r, echo=FALSE}
+all.data$RAIN[all.data$RAIN > 100] <- 100
+```
+
+Problem sva videla še v tem, da R podatke o datumu interpertira kot `factor`.
+Ker je veliko podatkov ciklične narave, sva podatek o datumu ločila na leto in
+dan v letu. Za to sva uporabila vgranejo funkcijo `as.POSIXlt`.
+Poskusila sva vključiti tudi mesec in dan v mesecu, a sva ugotovila, da taki
+podatki ne prinašajo dodane vrednosti.
+```{r}
+splitDate <- function(df)
+{
+  dates <- as.POSIXlt(df$DATE, format="%Y-%m-%d")
+  ydays <- dates$yday
+  years <- dates$year
+
+  df$DATE <- NULL
+  invisible(cbind(YEAR=years, YDAY=ydays, df))
+}
+
+all.data <- splitDate(all.data)
+```
+
+Izračunala sva tudi korelacijsko matriko podatkov iz katere se vidi, da so
+največje korelacije med neodvisnimi in odvisnimi atributi med `O3` in `TEMP` in
+med `O3` in `HUM`.
+```{r}
+cor(all.data[complete.cases(all.data), ])
+```
+
+Podatke sva še vizualizirala, da bi videla, če so med atributi še kakšne očitne
+(nelinearne) korelacije. Vidi se, da je `O3` očitno do neke mete odvisen od
+dneva v letu, kar je smiselno, saj je od dneva v letu na podoben način
+odvisna temperatura.
+```{r}
+plot(all.data$YDAY, all.data$O3, pch=20, col="blue")
+```
+
+Celoten graf korelacij se nahaja med prilogami, saj je prevelik za ta dokument.
+  
+Za delo sva si razdelila naloge. Kristjan je v glavnem delal na klasifikaciji,
+Matija pa na regresiji. Dobivala sva se enkrat tedensko, šla skozi rezultate,
+jih primerjala in izmenjevala ideje. Za skupno delo sva na začetku uporabljala
+Dropbox, a sva po kratkem času presedlala na Git, ker je urejanje merge
+conflictov na Dropboxu praktično nemogoče.
+
+[^1]: http://wmo.asu.edu/#global

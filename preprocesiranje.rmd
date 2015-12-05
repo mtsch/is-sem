@@ -1,0 +1,50 @@
+# Preprocesiranje podatkov
+
+Testiranje različnih tehnik preprocesiranja podatkov je bil iterativen proces.
+Različne metode sva preizkušala med izbiro algoritmov in evaluacijo atributov.
+Tiste, ki so dajali boljše rezultate sva zavrgla, tiste, ki so bili bolj
+uspešni pa obdržala.
+
+## Imputacija manjkajočih vrednosti
+
+Na začetku sva uporabljala podatke brez imputacije, kasneje pa sva preizkušala
+različne algoritme. Presenetljivo se je izkazalo, da je bilo najbolj učinkovito
+nadomeščanje manjkajočih vrednosti z povprečjo vrednostjo atributa v primeru
+zveznih atributov in najbolj pogostim razredov v primeru diskretnih.  
+Preizkusila sva tudi imputacijo s funckijo `randomForest` in nekaj in nekaj
+različnih R paketov.
+
+## Logaritmiranje atributov
+
+Opazila sva, da sta atributa `RAIN` in `WIND` porazdeljena na način, ki
+spominja na eksponentno porazdelitev, če ju logaritmiramo pa se porazdeljujeta
+bolj podobno normalni porazdelitvi.
+```{r}
+par(mfrow=c(1,2))
+hist(all.data$RAIN)
+hist(all.data$WIND)
+```
+```{r}
+par(mfrow=c(1,2))
+hist(log(all.data$RAIN) + 1)
+hist(log(all.data$WIND) + 1)
+```
+
+Logaritmiranje se je izkazalo za uporabno pri klasifikaciji, pri regresiji pa
+prinašalo bistveno boljših rezultatov.
+
+## Binarizacija TLONG in TSHORT
+
+Ker so podatki za `TLONG` in `TSHORT` diskretni, sva jih poizkusila
+binarizirati. To se je izkazalo za uporabno pri regresiji.
+
+## PCA
+
+Podatke sva poizkusila transformirati s PCA, a se je izkazalo, da so napovedi
+enako dobre kot pri neobdelanih podaktih, z manjšim številom komponent pa malo
+slabše. Zaradi preprostosti modela sva se odločila, da PCA ne bova uporabljala.
+
+## Diskretizacija
+
+Pri klasifikaciji sva preizkusila tudi diskretizacijo nekaterih atributov s
+pomočjo paketa `discretization`. Tudi to ni obrodilo sadov.
