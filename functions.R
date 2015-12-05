@@ -79,7 +79,7 @@ sampleClassesEqualDist <- function(data, class_name, ratio=0.10, seed=0){
     }
     n <- nrow(data)
     n_test <- round(n*ratio)
-    shares <- table(data[class_name])
+    shares <- table(data[,class_name])
     shares_sum <- sum(shares)
     test_shares <- round(n_test*(shares)/shares_sum+1) # +1 to make extreme have two samples
     train <- c()

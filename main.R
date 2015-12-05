@@ -14,6 +14,9 @@ library(discretization) # https://cran.r-project.org/web/packages/discretization
 #library(infotheo) # discretization https://cran.r-project.org/web/packages/infotheo/infotheo.pdf
 library(kernlab)
 library(nnet)
+library(caret) # pca and other https://cran.r-project.org/web/packages/caret/caret.pdf
+library(rmarkdown)
+
 
 source("helpers.R")
 source("exploration.R")
