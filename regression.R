@@ -7,7 +7,7 @@ library(CORElearn)
 library(nnet)
 
 prepData <- function( all.df, output.col, exclude.col
-                    , test.percent=0.1, impute=imputeMean, log.out=F)
+                    , test.percent=0.1, impute=imputeMean, log.out=F, log.rw=F)
 {
 
   # rm na in output
@@ -28,7 +28,11 @@ prepData <- function( all.df, output.col, exclude.col
 
   if (log.out)
     df[, output.col] <- log(df[, output.col] + 1)
-    
+
+  if (log.rw) {
+    df$WIND <- log(1 + df$WIND)
+    df$RAIN <- log(1 + df$RAIN)
+  }
 
   # split data into test and learn data
   n    <- nrow(df)
@@ -163,9 +167,9 @@ performRF <- function(O3dfs, PSdfs, ..., best=F) # best ni zares blazno boljši
 performANN <- function(O3dfs, PSdfs, best=F, size=15, ...)
 {
   if (best) {
-    O3a <- best.nnet(O3 ~ ., data=O3dfs$learn, maxit=1000, ...)
+    O3a <- best.nnet(O3 ~ ., data=O3dfs$learn, maxit=1000, size=size, ...)
     print("ping!")
-    PSa <- best.nnet(PSMALL ~ ., data=PSdfs$learn, maxit=1000, ...)
+    PSa <- best.nnet(PSMALL ~ ., data=PSdfs$learn, maxit=1000, size=size, ...)
     print("pong!")
   } else {
     O3a <- nnet(O3 ~ ., data=O3dfs$learn, size=size, decay=1, maxit=1000, ...)
@@ -186,6 +190,11 @@ PS.data.me <- prepData( all.df
                       , "PSMALL", c("PLARGE", "O3", "DATE"))
 PS.data.me.log <- prepData( all.df
                           , "PSMALL", c("PLARGE", "O3", "DATE"), log.out=T)
+# log mara svm
+O3.data.log <- prepData( all.df
+                        , "O3", c("PLARGE", "PSMALL", "DATE"), log.rw=T)
+PS.data.log <- prepData( all.df
+                        , "PSMALL", c("PLARGE", "O3", "DATE"), log.rw=T)
 
 if (F){
 O3.data.rf <- prepData( all.df
