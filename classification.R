@@ -1,36 +1,34 @@
 
 clean <- clean_backup # backup
 
-# clean2 <- clean2[,cbind(cfs_attr,target)]
-
 clean2 <- excludeByColumn(clean2,c("YEAR","DAY","TLONG","RAIN"))
 clean2 <- excludeByColumn(clean2,c("YDAY"))
 majority_classifier <- max(table(data_with_na[,"OZONE_CLASS"]))/nrow(data_with_na)
 majority_classifier <- max(table(data_with_na[,"PLARGE_CLASS"]))/nrow(data_with_na)
 majority_classifier
 
+tmp <- sampleClassesEqualDist(includeByColumn(clean,c("TEMP","YDAY", "TSHORT", "WIND2", "YEAR","PLARGE_CLASS" )),target)
 tmp <- sampleClassesEqualDist(clean,target)
 train <- tmp$train
 test <- tmp$test
+performClassification(target, train, test, "rf", "ReliefFexpRank")
+train <- increaseLowFreqData(train,target,1.1)
 
-bagg_model <- bagging(OZONE_CLASS ~ ., train, mfinal = 20)
-pred <- predict.bagging(bagg_model,test)
-accuracy <- sum(pred$class == test$OZONE_CLASS) / nrow(test)
-accuracy
 
-train <- increaseLowFreqData(tmp$train, target, 1.5)
-test <- tmp$test
-
-bagg_model <- bagging(OZONE_CLASS ~ ., train, mfinal = 20)
-pred <- predict.bagging(bagg_model,test)
-accuracy <- sum(pred$class == test$OZONE_CLASS) / nrow(test)
-accuracy
+a <- pcaNNet(excludeByColumn(train,target),includeByColumn(train,target),size=10)
+a
+test1 <- data.frame(unclass(test$PLARGE_CLASS))
+names(test1)[1] <- "PLARGE_CLASS"
 
 
 
-
-
-
+train1 <- excludeByColumn(train,target)
+train2 <- unclass(includeByColumn(train,target))
+test1 <- excludeByColumn(test,target)
+a <- nnet(train1, train2, size = 5, decay = 0.0001, maxit = 10000)
+a <- pcaNNet(train1, train2,size=10,decay = 0.0001, maxit = 10000)
+b <- predict(a,test1)
+b
 
 
 
@@ -47,7 +45,6 @@ for (i in models){ #needs 5-10 minutes to run
     else {
         accuracies[i,1] <- performClassification(target, train, test, i)[1]
     }
-    
 }
 toc
 # load("accuracies_clean_data.Rda") #load accuracies from upper loops
@@ -84,11 +81,7 @@ accuracy[1:8]
 
 
 
-clean2 <- clean # backup
-clean2 <- excludeByColumn(clean2, c("WET_DAY","TLONG","TSHORT","MONTH","RAIN","DAY"))
-tmp <- sampleClassesEqualDist(clean2,"OZONE_CLASS")
-train <- tmp$train
-test <- tmp$test
+
 
 # ozone_index <- which(names(train) == "OZONE_CLASS")
 # train_ozone <- train_matrix[,"OZONE_CLASS"]
@@ -106,8 +99,6 @@ train_matrix <- data.matrix(train)
 test_ozone <- data.matrix(unclass(as.factor(test[,"OZONE_CLASS"])))
 test_matrix <- data.matrix(test)
 
-train_matrix <- train_matrix[,-5] # need function to remove matrix column from name
-test_matrix <- test_matrix[,-5]
 
 mp_weights <- monmlp.fit(x = train_matrix,y =  train_ozone, hidden1 = 4, hidden2=4)
 pred <- monmlp.predict(x = as.matrix(test_matrix), weights = mp_weights)
