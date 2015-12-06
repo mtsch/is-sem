@@ -15,6 +15,8 @@ library(discretization) # https://cran.r-project.org/web/packages/discretization
 library(kernlab)
 library(nnet)
 library(caret) # pca and other https://cran.r-project.org/web/packages/caret/caret.pdf
+library(ipred)
+
 
 source("helpers.R")
 source("exploration.R")
