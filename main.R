@@ -15,11 +15,18 @@ library(discretization) # https://cran.r-project.org/web/packages/discretization
 library(kernlab)
 library(nnet)
 library(caret) # pca and other https://cran.r-project.org/web/packages/caret/caret.pdf
-library(rmarkdown)
-
 
 source("helpers.R")
 source("exploration.R")
 source("functions.R")
 # source("preprocessing.R") # commented for now
 
+# za regresijo
+library(pls)
+library(e1071)
+library(kknn)
+library(randomForest)
+library(CORElearn)
+library(nnet)
+
+library(rmarkdown)
