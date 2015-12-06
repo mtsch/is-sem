@@ -1,0 +1,193 @@
+# Regresija
+
+## Uvod
+
+Pri regresiji sva se odločila, da bova uporabljala naslednje algoritme:
+- Principal least squares - `plsr`
+- Support vector machines - `svm`
+- Random forest - `randomForest`
+- Nevronska mreža z enim skritim nivojom - `nnet`
+
+Uporabila sva naslednje knjižnice:
+```{r}
+library(pls)
+library(e1071)
+library(randomForest)
+library(nnet)
+```
+
+Modele sva na podatkih gradila vzporedno. To pomeni, da sva jih istočasno
+preizkušala na napovedih ozona in majhnih delcev. Za mero točnosti sva vzela
+korelacijski koeficient med napovedanimi in resničnimi podatki in pa koren
+povprečnega kvadrata napake (RMSE). Na začetku sva uporabljala učno in testno
+množico, kasneje pa sva dodala še cross-validation.
+
+Manjkajoče podatke v neodvisnih atributih sva nadomestila povprečnimi
+vrednostmi atributov. Preizkusila sva tudi napovedovanje s funkcijo
+`randomForest`, a je to dajalo skoraj enake, včasih celo slabše rezultate.  
+
+Za izbiro atributov sva preizkusila izbiranje glede na vrednost RReliefFa s
+preprosto funkcijo za filtriranje:
+
+```{r}
+rrelieffFilter <- function(formula, dfs, thresh=0, est="RReliefFequalK")
+{
+  evald <- attrEval(formula, data=dfs$all, estimator=est)
+  filt  <- c(evald >= thresh, TRUE)
+
+  out.name <- as.character(formula[2])
+  lapply(dfs, function(df) df[, filt])
+}
+```
+
+Tako filtriranje rahlo izboljša napovedi pri algoritmu `svm`, pri ostalih pa
+jih poslabša.
+
+Za risanje grafov in izračun korelacijskega koeficienta sva uporabila naslednjo
+funkcijo:
+
+```{r}
+getCor <- function(model, dfs, response, plot=T, ...)
+{
+  predicted <- predict(model, newdata=dfs$test, ...)
+  actual    <- dfs$test[, response]
+  if (plot) {
+    maxval <- max(predicted, actual)
+    minval <- min(predicted, actual)
+
+    plot(c(minval, maxval), c(minval, maxval), col="red", type="l"
+        , xlab="actual", ylab="predicted")
+    points(actual, predicted, pch=20, col="blue"
+          , xlim=c(minval, maxval), ylim=c(minval,maxval))
+  }
+  cor(actual, predicted)
+}
+```
+
+## Priprava podatkov
+
+Podatke sva pripravila s funkcijo:
+```{r}
+prepData <- function( all.df, output.col, exclude.col
+                    , test.percent=0.1, impute=imputeMean, log.out=F, log.rw=F)
+{
+
+  # rm na in output
+  df <- all.df[!is.na(all.df[, output.col]), ]
+  # rm exclude.col
+  df <- df[, !names(df) %in% c(exclude.col, "DAY")]
+  # binarize TRAJ
+  df <- binarizeTraj(df)
+  # winsorize RAIN
+  max.rain <- 100
+  df$RAIN[df$RAIN > max.rain] <- max.rain
+
+  # impute missing values in inputs
+  cnames    <- colnames(df)
+  resp.i    <- which(cnames == output.col)
+  imputed.x <- impute(df[, -resp.i])
+  df        <- named(cbind(imputed.x, df[, resp.i]), col=cnames)
+
+  if (log.out)
+    df[, output.col] <- log(1 + df[, output.col])
+
+  if (log.rw) {
+    df$WIND <- log(1 + df$WIND)
+    df$RAIN <- log(1 + df$RAIN)
+  }
+
+  # split data into test and learn data
+  n    <- nrow(df)
+  test <- sample(1:n, round(n * test.percent))
+
+  list( learn = df[-test, ]
+      , test  = df[ test, ] 
+      , all   = df )
+
+}
+```
+
+Funkcija binarizira `TSHORT` in `TLONG`, omeji `RAIN`, nadomesti manjkajoče
+vrednosti, po potrebi logartmira atribute in podatke razdeli na učno in testno
+množico.
+
+Pred uporabo algoritma `nnet` sva podatke tudi skalirala.
+
+## Napovedovanje ozona
+
+Napvedovanje ozona je bilo zelo uspešno. Najboljše rezultate je dal algoritem
+`randomForest`
+
+```{r}
+library(ipred)
+
+O3.data <- prepData(all.data, "O3", exclude.col=c("PLARGE", "PSMALL", "DATE"))
+```
+
+### PLS:
+```{r}
+pls.model <- plsr(O3 ~ ., data=O3.data$learn)
+pls.rmse  <- errorest( O3 ~ .
+                     , O3.data$all
+                     , model=plsr
+                     , predict=function(...)
+                                 predict(..., ncomp=3))
+pls.cor   <- getCor(pls.model, O3.data, "O3", ncomp=3)
+
+list(rmse=pls.rmse$error, cor=pls.cor)
+```
+
+### SVM:
+```{r}
+O3.data.svm <- rrelieffFilter(O3 ~ ., O3.data, thresh=0)
+
+svm.model <- best.svm(O3 ~ ., data=O3.data.svm$learn)
+svm.rmse  <- errorest( O3 ~ .
+                     , O3.data.svm$all
+                     , model=best.svm)
+svm.cor   <- getCor(svm.model, O3.data.svm, "O3")
+
+list(rmse=svm.rmse$error, cor=svm.cor)
+```
+
+### NNET:
+```{r}
+ann.model <- nnet( O3 ~ ., data=O3.data$learn
+                 , maxit=3000, size=15, trace=F, linout=T)
+ann.rmse  <- errorest( O3 ~ .
+                     , O3.data$all
+                     , model=function(...)
+                               nnet(..., maxit=3000
+                                       , size=15, trace=F, linout=T))
+ann.cor   <- getCor(ann.model, O3.data, "O3")
+
+list(rmse=ann.rmse$error, cor=ann.cor)
+```
+
+### Random Forest:
+```{r}
+rf.model <- randomForest(O3 ~ ., data=O3.data$learn)
+rf.rmse  <- errorest( O3 ~ .
+                    , O3.data$all
+                    , model=randomForest)
+rf.cor   <- getCor(rf.model, O3.data, "O3")
+
+list(rmse=rf.rmse$error, cor=rf.cor)
+```
+
+### Primerjava algoritmov
+
+```{r}
+list( pls = pls.rmse$error
+    , svm = svm.rmse$error
+    , ann = ann.rmse$error
+    , rf  = rf.rmse$error)
+```
+```{r}
+list(pls = pls.cor, svm = svm.cor, ann = ann.cor, rf = rf.cor)
+```
+
+Ko primerjamo rezultate vidimo, da so napovedi v splošnem dobre in da najboljše
+napovedi daje `randomForest`, najslabše pa `plsr`.  
+`plsr` verjetno ne deluje tako dobro, ker je odvisnost med `O3` in ostalimi
+atributi izrazito nelinearna. 
