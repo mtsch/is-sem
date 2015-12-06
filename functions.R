@@ -44,22 +44,17 @@ attrEvalMultipleEst <- function(class, data, estimators){
     values
 }
 
-performClassification <- function(class_name, train_data, test_data, model_name, estimator_name=NULL){
+performClassification <- function(class_name, train_data, test_data, model_name, predictionType="class", estimator_name=NULL, ...){
     if (is.null(estimator_name)){
-        ml_model <- CoreModel(class_name, train_data, model=model_name)
+        ml_model <- CoreModel(class_name, train_data, model=model_name, ...)
+    } else{
+        ml_model <- CoreModel(class_name, train_data, model=model_name, selectionEstimator=estimator_name, ...)
     }
-    else{
-        ml_model <- CoreModel(class_name, train_data, model=model_name, selectionEstimator=estimator_name)
-    }
-    prediction <- predict(ml_model, test_data, type="class")
+    prediction <- predict(ml_model, test_data, type=predictionType)
     f_accuracies <- modelEval(ml_model, test_data[,class_name], prediction)
-    f_accuracies
-    # list(accuracies=f_accuracies, model=ml_model)
+    list(accuracies=f_accuracies, model=ml_model, predictions=prediction)
 }
-# tree_m <- CoreModel("OZONE_CLASS",train,model="tree")
-# tree_pred <- predict(tree_m,test, type="class")
-# accuracies <- modelEval(tree_m,test$OZONE_CLASS,tree_pred)
-# accuracies[1:7]
+
 
 
 excludeByColumn <- function(data, columns){
@@ -127,4 +122,13 @@ increaseLowFreqData <- function(data, target, k=0.1){ # works like shit
     new_data
 }
 
+
+predictionVoting <- function(predictions){
+    votes <- array(0,dim(predictions[[1]]))
+    for (i in predictions){
+        votes <- votes + i
+    }
+    votes
+    
+}
 

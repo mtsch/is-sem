@@ -60,7 +60,7 @@ accuracy
 # 0.84 clean removed DAY YEAR RAIN TLONG
 # 0.8246445 uniform dist removed DAY YEAR RAIN TLONG
 
-bagg_model <- bagging(OZONE_CLASS ~ ., train, mfinal = 20)
+bagg_model <- bagging(PLARGE_CLASS ~ ., train, mfinal = 20)
 pred <- predict.bagging(bagg_model,test)
 accuracy <- sum(pred$class == test$OZONE_CLASS) / nrow(test)
 accuracy
