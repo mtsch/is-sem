@@ -1,0 +1,91 @@
+## Napovedovanje koncentracije majhnih delcev v zraku
+
+```{r}
+PSMALL.data <- prepData( all.data, "PSMALL"
+                       , exclude.col=c("PLARGE", "O3", "DATE"))
+```
+
+Podatki za `PSMALL` so bolj problematični, kot tisti za `O3`. Glavni problem je
+v tem, da ima večina meritev majhno vrednost, kar pomeni, da za učenje primerov
+kjer so vrednosti višje nimamo dovolj primerov. To bi lahko poskušali reševati
+z logaritmiranjem, a to pokvari oceno napake in napovedane vrednosti.
+
+```{r}
+hist(PSMALL.data$all$PSMALL)
+```
+
+### PLS:
+```{r}
+pls.model <- plsr(PSMALL ~ ., data=PSMALL.data$learn)
+pls.rmse  <- errorest( PSMALL ~ .
+                     , PSMALL.data$all
+                     , model=plsr
+                     , predict=function(...)
+                                 predict(..., ncomp=7))
+pls.cor   <- getCor(pls.model, PSMALL.data, "PSMALL", ncomp=7)
+
+list(rmse=pls.rmse$error, cor=pls.cor)
+```
+
+### SVM:
+```{r}
+PSMALL.data.svm <- rrelieffFilter(PSMALL ~ ., PSMALL.data, thresh=0)
+
+svm.model <- best.svm(PSMALL ~ ., data=PSMALL.data.svm$learn)
+svm.rmse  <- errorest( PSMALL ~ .
+                     , PSMALL.data.svm$all
+                     , model=best.svm)
+svm.cor   <- getCor(svm.model, PSMALL.data.svm, "PSMALL")
+
+list(rmse=svm.rmse$error, cor=svm.cor)
+```
+
+### NNET:
+```{r}
+ann.model <- nnet( PSMALL ~ ., data=PSMALL.data$learn
+                 , maxit=3000, size=15, trace=F, linout=T, decay=0.9)
+ann.rmse  <- errorest( PSMALL ~ .
+                     , PSMALL.data$all
+                     , model=function(...)
+                               nnet( ..., maxit=3000, size=15
+                                   , trace=F, linout=T, decay=0.9))
+ann.cor   <- getCor(ann.model, PSMALL.data, "PSMALL")
+
+list(rmse=ann.rmse$error, cor=ann.cor)
+```
+
+### Random Forest:
+```{r}
+rf.model <- randomForest(PSMALL ~ ., data=PSMALL.data$learn)
+rf.rmse  <- errorest( PSMALL ~ .
+                    , PSMALL.data$all
+                    , model=randomForest)
+rf.cor   <- getCor(rf.model, PSMALL.data, "PSMALL")
+
+list(rmse=rf.rmse$error, cor=rf.cor)
+```
+
+Tudi v primeru `PSMALL` vidimo, da je najbolj učinkovit algoritem
+`randomForest` in najslabši `plsr`.
+
+### Primerjava algoritmov
+
+```{r}
+list( pls = pls.rmse$error
+    , svm = svm.rmse$error
+    , ann = ann.rmse$error
+    , rf  = rf.rmse$error)
+```
+```{r}
+list(pls = pls.cor, svm = svm.cor, ann = ann.cor, rf = rf.cor)
+```
+
+Če primerjamo uporabljene algoritme pridemo do podobnega zaključka kot pri
+`O3`, le da so napovedi v splošnem slabše.  
+
+Glavni problem napovedovanja `PSMALL` je verjetno v tem, da je za primere kjer
+je njihova vrednost visoka zelo malo podatkov, kar pomeni slabe napovedi pri
+višjih vrednostih.
+To se dobro vidi iz grafov `actual` vs `predicted`, saj nekatere točke na
+grafih ležijo skrajno desno.
+
