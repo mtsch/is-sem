@@ -84,13 +84,12 @@ accuracy_bagg # = 0.8344371
 
 
 # plarge rf 10 fold 0.9748398
-rf_model <- CoreModel(PLARGE_CLASS ~ ., train, model="rf", selectionEstimator="ReliefFequalK")
+rf_model <- CoreModel(PLARGE_CLASS ~ ., train, model="rf", selectionEstimator="MDL", rfNoTrees=100)
 pred_rf <- predict(rf_model, test, type="class")
 accuracy_rf <- sum(test$PLARGE_CLASS == pred_rf)/nrow(test)
 accuracy_rf #  
 
-train <- excludeByColumn(train,c("YEAR","TLONG","RAIN2"))
-test <- excludeByColumn(test,c("YEAR","TLONG","RAIN2"))
+
 boost_model <- adabag::boosting(PLARGE_CLASS ~ ., train, mfinal = 100)
 pred_boost <- predict.boosting(boost_model, test)
 accuracy_boost <- sum(test$PLARGE_CLASS == pred_boost$class)/nrow(test)
