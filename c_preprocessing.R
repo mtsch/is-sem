@@ -39,15 +39,15 @@ clean_backup <- clean
 
 
 
-for (i in names(rows_with_na_except_class)){
-    print("__________________________________________________")
-    print(i)
-    a <- sum(is.na(rows_with_na_except_class[i]))
-    b <- nrow(rows_with_na_except_class) - a
-    printf("%14.s has %5.1d na and %4.d not.na",i,a,b) # doesn't print string i :/
-}
-
-
-# solar angle
-clean2$SOLAR_ANGLE <- 23.45*(pi/180)*sin(2*pi*((284+clean$YDAY)/36.25)) 
-clean2$SOLAR_ANGLE2 <- 34+sin(pi*8*clean$YDAY/80) # dummy
+# for (i in names(rows_with_na_except_class)){
+#     print("__________________________________________________")
+#     print(i)
+#     a <- sum(is.na(rows_with_na_except_class[i]))
+#     b <- nrow(rows_with_na_except_class) - a
+#     printf("%14.s has %5.1d na and %4.d not.na",i,a,b) # doesn't print string i :/
+# }
+# 
+# 
+# # solar angle
+# clean2$SOLAR_ANGLE <- 23.45*(pi/180)*sin(2*pi*((284+clean$YDAY)/36.25)) 
+# clean2$SOLAR_ANGLE2 <- 34+sin(pi*8*clean$YDAY/80) # dummy
