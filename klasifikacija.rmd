@@ -1,0 +1,156 @@
+# Klasifikacija
+
+## Uvod
+
+Pri klasifikaciji sva se odločila, da bova uporabljala naslednje algoritme:
+- Tree - `CORElearn`
+- Bayes - `CORElearn`
+- knn - `CORElearn`
+- Random forest - `CORElearn`
+- Support vector machines - `e1071`
+- Dvonivojski perceptron - `monmlp`
+- Boosting with tree - `adabag`
+- Bagging with tree - `adabag`
+
+Uporabila sva naslednje knjižnice:
+```{r}
+library(CORElearn) 
+library(plyr)
+library(rpart)
+library(adabag) 
+library(e1071) 
+library(monmlp) 
+library(caret) 
+library(FSelector) 
+library(discretization) 
+library(caret) 
+library(ipred)
+```
+
+Modele sva na podatkih gradila zaporedno, in sicer prvo za O3, za katerega je več podatkov, in zatem še
+za P10. Za mero točnosti sva vzela klasifikacijsko napako, zaradi enostavnosti primerjanja rezultatov iz 
+različnih knjižnic. Na začetku sva uporabljala učno in testno množico, kasneje pa sva dodala še 
+cross-validation.
+
+Manjkajoče podatke v neodvisnih atributih sva za O3 nadomestila povprečnimi
+vrednostmi atributov, pri PM10 pa sva jih izpustila, ker so bili takšni rezultati boljši.
+Za izbiro atributov sva preizkusila kombinacijo mer, in sicer InfoGain, Gini, MDL, ReliefFequalK, in 
+ReliefFexpRank.
+
+```{r}
+estimators <- c("InfGain","GainRatio","Gini","MDL","ReliefFequalK","ReliefFexpRank", "ReliefFdistance")
+attrEvalMultipleEst <- function(class, data, estimators){
+    values <- list()
+    for (i in estimators){ 
+        values[i] <- list(attrEvalSort(class, data, estimator=i))
+    
+    }
+    values
+}
+```
+
+## Priprava podatkov
+
+Podatke sva pripravila s skripto:
+```{r}
+alles  <- splitDate %.% read.csv("pollution.csv")
+alles$OZONE_CLASS <- cut(alles$O3, breaks=c(0,60.0,120.0,180.0,666),labels = c("LOW","MODERATE","HIGH","EXTREME"))
+alles$PLARGE_CLASS <- cut(alles$PLARGE, breaks=c(0,35.0,50.0,666),labels = c("LOW","MODERATE","HIGH"))
+alles$TLONG <- as.factor(alles$TLONG)
+alles$TSHORT <- as.factor(alles$TSHORT)
+alles$RAIN[alles$RAIN > 400] <- 400
+alles <- excludeByColumn(alles, c("DATE","O3","PLARGE","PSMALL","MONTH","DAY"))
+alles$RAIN2 <- log(1+alles$RAIN,2)
+alles$WIND2 <- log(1+alles$WIND,2)
+alles$RAIN <- NULL
+alles$WIND <- NULL
+target <- "PLARGE_CLASS"
+anti_target <- "OZONE_CLASS"
+target <- "OZONE_CLASS"
+anti_target <- "PLARGE_CLASS"
+indexes_of_clean_data <- complete.cases(alles[,target])
+
+indexes_of_clean_data <- complete.cases(alles)
+data_with_na <- excludeByColumn(alles[indexes_of_clean_data,], anti_target) 
+clean <- replace.na.in.df(data_with_na)
+```
+Poleg tega sva poskusila z različnimi transformacijami atributov, in sicer logaritmiranje, kvadriranje,
+
+
+## Izbira množic
+
+Množoce pri klasifikaciji sva izbrala tako, da so bile razdelitve po razredih enake v učni in testni množici.
+```{r}
+sampleClassesEqualDist <- function(data, class_name, ratio=0.10, seed=0){
+    if (!seed==0){
+        set.seed(seed)
+    }
+    if (ratio > 1){
+        ratio <- ratio / 100
+    }
+    n <- nrow(data)
+    n_test <- round(n*ratio)
+    shares <- table(data[,class_name])
+    shares_sum <- sum(shares)
+    test_shares <- round(n_test*(shares)/shares_sum+1) # +1 to make extreme have two samples
+    train <- c()
+    test <- c()
+    for (i in names(shares)){
+        sub_data <- data[data[class_name] == i,]
+        sample <- sample(1:nrow(sub_data), test_shares[i])
+        test <- rbind(test, sub_data[sample,])
+        train <- rbind(train, sub_data[-sample,])
+    }
+    list(train=train, test=test)
+}
+```
+
+## Napovedovanje ozona
+
+Napvedovanje ozona je bilo zelo uspešno. Najboljše rezultate je dal algoritem
+`randomForest`
+
+### Random forest: CA: 0.8443709 
+```{r}
+sampled_data <- sampleClassesEqualDist(clean,target)
+train <- sampled_data$train
+test <- sampled_data$test
+rf_model <- CoreModel(OZONE_CLASS ~ ., train, model="rf", selectionEstimator="ReliefFexpRank")
+```
+
+### Adabag: CA: 0.8443709
+```{r}
+train <- excludeByColumn(train,c("YEAR","TLONG","RAIN2"))
+test <- excludeByColumn(test,c("YEAR","TLONG","RAIN2"))
+boost_model <- adabag::boosting(OZONE_CLASS ~ ., train, mfinal = 100)
+```
+
+### Adaboost: CA: 0.8344371
+```{r}
+train <- excludeByColumn(train,c("YEAR","TLONG","RAIN2"))
+test <- excludeByColumn(test,c("YEAR","TLONG","RAIN2"))
+bagg_model <- adabag::bagging(OZONE_CLASS ~ ., train, mfinal = 100)
+```
+
+
+
+### Primerjava algoritmov
+
+Algoritmi dajejo precej podobne rezultate, najboljše da dobimo z uporabo random forest s 100 drevesi in
+estimatorjem ReliefFexpRank.
+
+Uporabili smo tudi ostale že omenjene algoritme, ki pa niso dajali zadovoljivih rezultatov, približno enako 
+dobrih kot večinski klasifikator. Poskusila sva tudi združevanje algoritmov z glasovanjem, ki pa so rezultat
+poslabšali. 
+
+
+### Najboljši rezultat
+
+Je z uporabo random forest, 100 dreves, ReliefFexpRank. Natančnost je 0.8443709.
+
+
+### PM10
+
+Najboljši rezultat, ki sva ga dobila, je 0.9748398 (random forest), ki je nižji kot večinski klasifikator, 
+0.9751678. En mogoč razlog temu je to, da je večina podatkov v LOW razredu, zato se klasifikator ne more
+naučiti izjem, drugi pa, da ni bistvenih podatkov za razlikovanje primerov. 
